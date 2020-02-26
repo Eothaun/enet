@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0.2)
 
-project(enet)
+project(net VERSION 1.3.14 DESCRIPTION "Reliable UDP networking library"  LANGUAGES C)
 
 # The "configure" step.
 include(CheckFunctionExists)
@@ -18,59 +18,58 @@ check_struct_has_member("struct msghdr" "msg_flags" "sys/types.h;sys/socket.h" H
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/types.h" "sys/socket.h")
 check_type_size("socklen_t" HAS_SOCKLEN_T BUILTIN_TYPES_ONLY)
 unset(CMAKE_EXTRA_INCLUDE_FILES)
+
+## options:
+option(BUILD_SHARED "Builds the lib Shared" OFF)
+
+## create target:
+
+if(BUILD_SHARED)
+    add_library(enet SHARED)
+    target_compile_definitions(enet PUBLIC ENET_DLL)
+else(BUILD_SHARED)
+    add_library(enet STATIC)
+endif(BUILD_SHARED)
+add_library(enet::enet ALIAS enet)
+
 if(MSVC)
-	add_definitions(-W3)
+target_compile_options(enet PRIVATE -W3)
 else()
-	add_definitions(-Wno-error)
+target_compile_options(enet PRIVATE -Wno-error)
 endif()
 
 if(HAS_FCNTL)
-    add_definitions(-DHAS_FCNTL=1)
+    target_compile_options(enet PRIVATE -DHAS_FCNTL=1)
 endif()
 if(HAS_POLL)
-    add_definitions(-DHAS_POLL=1)
+    target_compile_options(enet PRIVATE -DHAS_POLL=1)
 endif()
 if(HAS_GETNAMEINFO)
-    add_definitions(-DHAS_GETNAMEINFO=1)
+    target_compile_options(enet PRIVATE -DHAS_GETNAMEINFO=1)
 endif()
 if(HAS_GETADDRINFO)
-    add_definitions(-DHAS_GETADDRINFO=1)
+    target_compile_options(enet PRIVATE -DHAS_GETADDRINFO=1)
 endif()
 if(HAS_GETHOSTBYNAME_R)
-    add_definitions(-DHAS_GETHOSTBYNAME_R=1)
+    target_compile_options(enet PRIVATE -DHAS_GETHOSTBYNAME_R=1)
 endif()
 if(HAS_GETHOSTBYADDR_R)
-    add_definitions(-DHAS_GETHOSTBYADDR_R=1)
+    target_compile_options(enet PRIVATE -DHAS_GETHOSTBYADDR_R=1)
 endif()
 if(HAS_INET_PTON)
-    add_definitions(-DHAS_INET_PTON=1)
+    target_compile_options(enet PRIVATE -DHAS_INET_PTON=1)
 endif()
 if(HAS_INET_NTOP)
-    add_definitions(-DHAS_INET_NTOP=1)
+    target_compile_options(enet PRIVATE -DHAS_INET_NTOP=1)
 endif()
 if(HAS_MSGHDR_FLAGS)
-    add_definitions(-DHAS_MSGHDR_FLAGS=1)
+    target_compile_options(enet PRIVATE -DHAS_MSGHDR_FLAGS=1)
 endif()
 if(HAS_SOCKLEN_T)
-    add_definitions(-DHAS_SOCKLEN_T=1)
+    target_compile_options(enet PRIVATE -DHAS_SOCKLEN_T=1)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
-
-set(INCLUDE_FILES_PREFIX include/enet)
-set(INCLUDE_FILES
-    ${INCLUDE_FILES_PREFIX}/callbacks.h
-    ${INCLUDE_FILES_PREFIX}/enet.h
-    ${INCLUDE_FILES_PREFIX}/list.h
-    ${INCLUDE_FILES_PREFIX}/protocol.h
-    ${INCLUDE_FILES_PREFIX}/time.h
-    ${INCLUDE_FILES_PREFIX}/types.h
-    ${INCLUDE_FILES_PREFIX}/unix.h
-    ${INCLUDE_FILES_PREFIX}/utility.h
-    ${INCLUDE_FILES_PREFIX}/win32.h
-)
-
-set(SOURCE_FILES
+target_sources(enet PRIVATE
     callbacks.c
     compress.c
     host.c
@@ -81,14 +80,39 @@ set(SOURCE_FILES
     unix.c
     win32.c)
 
-source_group(include FILES ${INCLUDE_FILES})
-source_group(source FILES ${SOURCE_FILES})
 
-add_library(enet STATIC
-    ${INCLUDE_FILES}
-    ${SOURCE_FILES}
+target_include_directories(enet PUBLIC
+PRIVATE
+$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+PUBLIC
+$<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+)
+target_sources(enet PRIVATE
+    callbacks.c
+    compress.c
+    host.c
+    list.c
+    packet.c
+    peer.c
+    protocol.c
+    unix.c
+    win32.c)
+
+    set_target_properties( enet
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY libs
+    LIBRARY_OUTPUT_DIRECTORY libs
+    RUNTIME_OUTPUT_DIRECTORY bin
 )
 
-if (MINGW)
+if (MSVC)
     target_link_libraries(enet winmm ws2_32)
 endif()
+
+install(FILES ${INCLUDE_FILES}
+              DESTINATION include/enet)
+
+install(TARGETS enet
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
