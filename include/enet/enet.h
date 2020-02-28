@@ -31,6 +31,9 @@ extern "C"
 #define ENET_VERSION_GET_MINOR(version) (((version)>>8)&0xFF)
 #define ENET_VERSION_GET_PATCH(version) ((version)&0xFF)
 #define ENET_VERSION ENET_VERSION_CREATE(ENET_VERSION_MAJOR, ENET_VERSION_MINOR, ENET_VERSION_PATCH)
+#ifndef UNUSED
+   #define UNUSED(x) (void)(x)
+#endif
 
 typedef enet_uint32 ENetVersion;
 
