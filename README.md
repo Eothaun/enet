@@ -15,4 +15,12 @@ or `mkdir build && cmake ... -DBUILD_SHARED` builds the shared version
 
 `cd build && make && make install`
 
+## Generate the build system. (autoreconf)
+
+autoreconf -vfi
+
+## Compile and install the library. (autoreconf)
+
+./configure && make && make install
+
 
